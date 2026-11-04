@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>dsh-xiumi · 原生剪贴板复制页</title>
+<style>
+  body { font: 14px/1.7 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; margin: 0; padding: 24px; color: #222; background: #fafafa; }
+  h1 { font-size: 16px; margin: 0 0 8px; }
+  #status { padding: 12px 14px; border: 1px solid #d8e2da; border-radius: 10px; background: #fff; white-space: pre-wrap; }
+  #status.ok { background: #eef8f0; border-color: #b7e0c1; }
+  #status.bad { background: #fff0f0; border-color: #f0b7b7; }
+  .hint { color: #777; margin-top: 10px; font-size: 12px; }
+  code { background: #eee; padding: 1px 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>dsh-xiumi · 原生剪贴板复制页</h1>
+<div id="status">正在载入文档…</div>
+<div class="hint">
+  本页把 <code>application/xiumi-comps; category=paper.comp</code> 写入 Chromium 原生剪贴板。<br>
+  必须由**真实按键**触发（浏览器不接受脚本模拟的复制），所以请在本页按一次 <code>Ctrl+C</code>。
+</div>
+<script>
+(() => {
+  'use strict';
+  const status = document.getElementById('status');
+  const query = new URLSearchParams(location.search);
+  let doc = null;
+  window.__docReady = false;
+  window.__lastCopy = null;
+
+  const setStatus = (msg, kind = '') => { status.textContent = msg; status.className = kind; };
+
+  fetch(query.get('doc') || '/doc.json', { cache: 'no-store' })
+    .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then((data) => {
+      doc = data;
+      const formats = (doc.clipboard && doc.clipboard.formats) || [];
+      window.__docReady = true;
+      setStatus(`已载入：${(doc.meta && doc.meta.title) || '未命名'}\n格式：${formats.map((f) => f.mime).join(' / ')}\n现在按 Ctrl+C 写入剪贴板。`, 'ok');
+    })
+    .catch((err) => setStatus('载入失败：' + err.message, 'bad'));
+
+  document.addEventListener('copy', (event) => {
+    if (!doc || !event.clipboardData) return;
+    if (!event.isTrusted) { setStatus('浏览器不会把脚本模拟的复制写成私有格式，请真实按 Ctrl+C。', 'bad'); return; }
+    try {
+      for (const f of doc.clipboard.formats) {
+        const payload = typeof f.data === 'string' ? f.data : JSON.stringify(f.data);
+        event.clipboardData.setData(f.mime, payload);
+      }
+      event.clipboardData.setData('text/plain', (doc.meta && doc.meta.title) || 'xiumi document');
+      event.preventDefault();
+      window.__lastCopy = { ok: true, at: Date.now(), formats: doc.clipboard.formats.length };
+      setStatus('已写入剪贴板（' + doc.clipboard.formats.length + ' 个格式）。\n去秀米编辑器按 Ctrl+V 粘贴。', 'ok');
+    } catch (err) {
+      window.__lastCopy = { ok: false, error: String(err) };
+      setStatus('复制失败：' + err.message, 'bad');
+    }
+  });
+})();
+</script>
+</body>
+</html>

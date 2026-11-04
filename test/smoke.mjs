@@ -45,6 +45,8 @@ check('skill 引用的文件都存在', () => {
     'skill/scripts/xiumi-audit.mjs',
     'skill/scripts/xiumi-session.mjs',
     'skill/scripts/install-harnesses.mjs',
+    'skill/scripts/xiumi-clip.mjs',
+    'skill/scripts/xiumi-components.mjs',
     'skill/scripts/cdp.mjs',
   ]) assert.ok(fs.existsSync(path.join(ROOT, rel)), `missing ${rel}`);
 });
@@ -103,6 +105,18 @@ check('升级会清掉旧版本残留文件', () => {
   const r = mod.installSkill({ skillDir: target, version: '0.2.2' });
   assert.equal(r.status, 'updated');
   assert.equal(fs.existsSync(stale), false, '旧文件仍然存在');
+});
+
+check('compileSpec 生成合法 paper.comp 文档', async () => {
+  const comps = await import(pathToFileURL(path.join(ROOT, 'skill', 'scripts', 'xiumi-components.mjs')).href);
+  const doc = comps.compileSpec({ title: 't', blocks: [
+    { type: 'heading', text: 'H' }, { type: 'text', text: 'body' },
+    { type: 'card', title: 'C', text: 'x' }, { type: 'row2', left: { title: 'L' }, right: { title: 'R' } },
+  ] });
+  const fmt = doc.clipboard.formats[0];
+  assert.equal(fmt.mime, 'application/xiumi-comps; category=paper.comp');
+  assert.equal(fmt.data.slices.length, 4);
+  assert.ok(fmt.data.slices.every((s) => s._comp && s._comp._$uuid));
 });
 
 check('apply 用假 ctx 跑通并装到 config.skillDir', () => {

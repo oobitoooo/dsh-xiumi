@@ -64,7 +64,11 @@ node scripts/xiumi-audit.mjs --share https://v.xiumius.cn/board/v5/<x>/<id> --md
 node scripts/xiumi-session.mjs export
 node scripts/xiumi-session.mjs apply --open "https://xiumi.us/studio/v5#/paper/for/<草稿id>/cube/0"
 
-# 9) 装到本机其它 AI 助手（Claude Code / Cursor / Codex …）
+# 9) 整篇「原生组件」一次粘贴（把 spec 编译成秀米原生组件，粘进草稿）
+node scripts/xiumi-clip.mjs build --spec spec.json --out doc.xiumi.json
+node scripts/xiumi-clip.mjs push  --spec spec.json --draft <草稿id>
+
+# 10) 装到本机其它 AI 助手（Claude Code / Cursor / Codex …）
 node scripts/install-harnesses.mjs --list
 node scripts/install-harnesses.mjs
 ```
@@ -94,6 +98,9 @@ node scripts/install-harnesses.mjs
 | `scripts/xiumi-session.mjs` | 登录态 `export` / `apply` / `status`（cookie + localStorage，免整个 profile） |
 | `scripts/xiumi-audit.mjs` | 排版质检：字号/行距/图注一致性/图片比例，`--preset strict\|standard\|loose`，输出 Markdown + JSON |
 | `scripts/install-harnesses.mjs` | 把本 skill 装进本机其它 AI 助手（Claude Code / Cursor / Codex / Gemini …） |
+| `scripts/xiumi-clip.mjs` | 原生组件剪贴板注入：`demo/build/push/serve`，整篇一次粘贴成型 |
+| `scripts/xiumi-components.mjs` | 秀米 paper.comp 组件构造器（text/image/wrapper/row1/row2/document/compileSpec） |
+| `references/clipboard-format.md` | 剪贴板格式与组件最小结构（移植自 xiumi-native-clipboard，MIT） |
 | `scripts/cdp.mjs` | 零依赖裸 CDP：`targets/nav/eval/click/wheel/key/type/shot`，适合探活与截图 |
 
 ## 三个增量能力（v0.2.0）
@@ -117,6 +124,18 @@ node scripts/xiumi-session.mjs status
 ```
 
 比复制整个 profile 更轻：`sid` 有效期约 3 天，过期重新 export 即可；不碰账号密码。
+
+### 原生组件剪贴板（借鉴 xiumi-native-clipboard 的路子）
+
+```bash
+node scripts/xiumi-clip.mjs demo                      # 生成一份演示文档
+node scripts/xiumi-clip.mjs build --spec spec.json --out doc.xiumi.json
+node scripts/xiumi-clip.mjs push --spec spec.json --draft <草稿id>   # 自动复制→切编辑器→粘贴→核对组件数
+```
+
+- 把组件树写成 Chromium 原生剪贴板（`application/xiumi-comps; category=paper.comp`），**粘一次整篇成型**，粘完仍是可编辑原生组件（不是截图）。
+- 浏览器只接受**真实按键**的 copy 事件：`push` 用 Playwright 发真实 `Ctrl+C`，再切到秀米编辑器 `Ctrl+V`，最后用「顶层组件数」核对是否生效。
+- spec 的块类型：`heading / text / image / card / row2`；图片建议直接给秀米 CDN 永久地址（`data:` 内嵌图需要两轮上传，暂未实现）。
 
 ### 装到别的 AI 助手
 

@@ -19,6 +19,7 @@
 - **批量换图**：按图片 URL 里的 `-sz_<字节数>` 指纹精确匹配图库缩略图
 - **画布快照 / 校验**：组件数、每个滑动组件的页数与图片指纹，用来判断操作是否真的生效
 - **保存 + 审核**：保存草稿；引导点「申请审核」并用分享页核对是否已更新
+- **原生组件粘贴**（v0.3.0）：把一篇稿子编译成秀米 `paper.comp` 原生组件，经 Chromium 原生剪贴板**一次粘成整篇**，粘完仍可编辑；附 `spec` → 文档编译与自动粘贴/核对（思路移植自 [xiumi-native-clipboard](https://github.com/gih10012/xiumi-native-clipboard)，MIT）
 - **排版质检**（v0.2.0）：打开渲染后的分享页/编辑页读 computedStyle，检查正文字号行距、小标题、**图注字号与颜色一致性**、图片比例，输出 Markdown + JSON 报告（借鉴 xiumi-editor-checker 的规则，但不解析私有 JSON）
 - **登录态轻量迁移**（v0.2.0）：导出 cookie + localStorage 成 `session.json`，注入任意调试浏览器，免复制整个 profile（`sid` 约 3 天有效）
 - **多 harness 安装**（v0.2.0）：一键装进 Claude Code / Cursor / Codex / Gemini 等本机已装的 AI 助手
@@ -83,7 +84,11 @@ node xiumi-gallery.mjs verify --share https://v.xiumius.cn/board/v5/<x>/<id>
 # 8) 排版质检（字号/行距/图注一致性/图片比例 → Markdown 报告）
 node xiumi-audit.mjs --share https://v.xiumius.cn/board/v5/<x>/<id> --md report.md
 
-# 9) 登录态轻量迁移（免复制整个 profile）
+# 9) 整篇原生组件一次粘贴（编译 spec → 复制 → 粘贴 → 自动核对）
+node xiumi-clip.mjs build --spec spec.json --out doc.xiumi.json
+node xiumi-clip.mjs push --spec spec.json --draft <草稿id>
+
+# 10) 登录态轻量迁移（免复制整个 profile）
 node xiumi-session.mjs export
 node xiumi-session.mjs apply --open "https://xiumi.us/studio/v5#/paper/for/<草稿id>/cube/0"
 ```
@@ -106,6 +111,8 @@ dsh-xiumi/
 │       ├── xiumi-audit.mjs      # 排版质检（字号/行距/图注/图片比例）
 │       ├── xiumi-session.mjs    # 登录态 export/apply/status（cookie + localStorage）
 │       ├── install-harnesses.mjs# 装到 Claude Code / Cursor / Codex 等
+│       ├── xiumi-clip.mjs       # 原生组件剪贴板注入（demo/build/push/serve）
+│       ├── xiumi-components.mjs  # paper.comp 组件构造器
 │       └── cdp.mjs              # 零依赖裸 CDP 小工具
 └── test/smoke.mjs          # 冒烟测试（文件完整性 + 语法 + frontmatter）
 ```
@@ -127,3 +134,8 @@ node test/smoke.mjs
 ## License
 
 MIT
+
+## 致谢
+
+- 原生剪贴板格式与组件构造思路来自 [gih10012/xiumi-native-clipboard](https://github.com/gih10012/xiumi-native-clipboard)（MIT），本项目的 JS 实现为改写版本。
+- 质检规则参考 [15369577595/xiumi-editor-checker](https://github.com/15369577595/xiumi-editor-checker)。
