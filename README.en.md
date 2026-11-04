@@ -19,6 +19,9 @@ Drive a **logged-in** browser's [Xiumi](https://xiumi.us) article editor with **
 - **Batch image replacement**: match gallery thumbnails by the `-sz_<bytes>` fingerprint embedded in the image URL.
 - **Canvas snapshots / checks**: component count, per-gallery page list and fingerprints, to prove an operation really applied.
 - **Save + review**: save the draft, then click "申请审核" (apply for review) and verify the public share page.
+- **Layout audit** (v0.2.0): open the rendered share/editor page, read computed styles, and check body font size / line height, headings, **caption size and color consistency**, and image aspect ratios; emits Markdown + JSON reports.
+- **Lightweight session transfer** (v0.2.0): export cookies + localStorage to `session.json` and inject it into any CDP browser — no full profile copy needed.
+- **Multi-harness install** (v0.2.0): one command installs the skill into Claude Code / Cursor / Codex / Gemini, etc.
 
 ## Install
 

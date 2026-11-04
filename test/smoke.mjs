@@ -42,6 +42,9 @@ check('skill 引用的文件都存在', () => {
     'skill/scripts/launch-browser.mjs',
     'skill/scripts/xiumi-lib.mjs',
     'skill/scripts/xiumi-gallery.mjs',
+    'skill/scripts/xiumi-audit.mjs',
+    'skill/scripts/xiumi-session.mjs',
+    'skill/scripts/install-harnesses.mjs',
     'skill/scripts/cdp.mjs',
   ]) assert.ok(fs.existsSync(path.join(ROOT, rel)), `missing ${rel}`);
 });
@@ -49,7 +52,8 @@ check('skill 引用的文件都存在', () => {
 check('所有 JS 语法检查通过', () => {
   const files = ['lib/index.js', 'test/smoke.mjs',
     'skill/scripts/launch-browser.mjs', 'skill/scripts/xiumi-lib.mjs',
-    'skill/scripts/xiumi-gallery.mjs', 'skill/scripts/cdp.mjs'];
+    'skill/scripts/xiumi-gallery.mjs', 'skill/scripts/xiumi-audit.mjs',
+    'skill/scripts/xiumi-session.mjs', 'skill/scripts/install-harnesses.mjs', 'skill/scripts/cdp.mjs'];
   for (const rel of files) {
     const r = spawnSync(process.execPath, ['--check', path.join(ROOT, rel)], { encoding: 'utf8' });
     assert.equal(r.status, 0, `${rel} 语法错误: ${r.stderr}`);
@@ -83,11 +87,22 @@ check('同版本再装：跳过', () => {
 });
 
 check('版本变化：先备份再覆盖', () => {
-  const r = mod.installSkill({ skillDir: target, version: '0.2.0' });
+  const r = mod.installSkill({ skillDir: target, version: '0.2.1' });
   assert.equal(r.status, 'updated');
   assert.ok(r.backup && fs.existsSync(r.backup), 'backup 目录不存在');
+  // 备份不能落在 skills 根目录下一层，否则会被 skills provider 当成同名 skill 扫到
+  assert.equal(path.dirname(r.backup), path.join(path.dirname(target), '.dsh-xiumi-backups'));
   const stamp = JSON.parse(fs.readFileSync(path.join(target, '.dsh-xiumi.json'), 'utf8'));
-  assert.equal(stamp.version, '0.2.0');
+  assert.equal(stamp.version, '0.2.1');
+});
+
+check('升级会清掉旧版本残留文件', () => {
+  // 先伪造一个"旧版本残留脚本"，再升级
+  const stale = path.join(target, 'scripts', 'launch-edge-cdp.ps1');
+  fs.writeFileSync(stale, 'stale', 'utf8');
+  const r = mod.installSkill({ skillDir: target, version: '0.2.2' });
+  assert.equal(r.status, 'updated');
+  assert.equal(fs.existsSync(stale), false, '旧文件仍然存在');
 });
 
 check('apply 用假 ctx 跑通并装到 config.skillDir', () => {

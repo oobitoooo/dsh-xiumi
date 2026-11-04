@@ -56,6 +56,17 @@ node scripts/xiumi-gallery.mjs save
 
 # 6) 核对已保存的分享页
 node scripts/xiumi-gallery.mjs verify --share https://v.xiumius.cn/board/v5/<x>/<id>
+
+# 7) 排版质检（字号/行距/图注一致性/图片比例），输出 Markdown + JSON
+node scripts/xiumi-audit.mjs --share https://v.xiumius.cn/board/v5/<x>/<id> --md report.md
+
+# 8) 登录态轻量迁移：把已登录浏览器的会话导出，之后注入到任意调试浏览器（免复制整个 profile）
+node scripts/xiumi-session.mjs export
+node scripts/xiumi-session.mjs apply --open "https://xiumi.us/studio/v5#/paper/for/<草稿id>/cube/0"
+
+# 9) 装到本机其它 AI 助手（Claude Code / Cursor / Codex …）
+node scripts/install-harnesses.mjs --list
+node scripts/install-harnesses.mjs
 ```
 
 ## 核心不变量（实测，别绕路）
@@ -80,7 +91,40 @@ node scripts/xiumi-gallery.mjs verify --share https://v.xiumius.cn/board/v5/<x>/
 | `scripts/xiumi-gallery.mjs` | CLI：`status` / `upload` / `convert` / `save` / `verify` |
 | `scripts/xiumi-lib.mjs` | 可复用函数：`connect/snapshot/listSwipes/findCompByImage/selectComponents/insertSwipe/setSlideCount/replaceSlideImage/deleteComponent/uploadGallery/saveDraft/verifyShare` |
 | `scripts/launch-browser.mjs` | 跨平台启动带调试口的 Edge/Chrome + 复制登录态 |
+| `scripts/xiumi-session.mjs` | 登录态 `export` / `apply` / `status`（cookie + localStorage，免整个 profile） |
+| `scripts/xiumi-audit.mjs` | 排版质检：字号/行距/图注一致性/图片比例，`--preset strict\|standard\|loose`，输出 Markdown + JSON |
+| `scripts/install-harnesses.mjs` | 把本 skill 装进本机其它 AI 助手（Claude Code / Cursor / Codex / Gemini …） |
 | `scripts/cdp.mjs` | 零依赖裸 CDP：`targets/nav/eval/click/wheel/key/type/shot`，适合探活与截图 |
+
+## 三个增量能力（v0.2.0）
+
+### 排版质检（借鉴 xiumi-editor-checker 的规则，但不解析私有 JSON）
+
+```bash
+node scripts/xiumi-audit.mjs --share <分享链接> [--preset strict] [--json r.json] [--md r.md]
+```
+
+- 打开**已渲染**的分享页/编辑页，读 `computedStyle` —— 与肉眼看到的完全一致，免逆向。
+- 检查：正文字号与行距、小标题字号/加粗、**图注字号与颜色是否统一**、图片宽高比（16:9 / 4:3）。
+- 有 `error` 时退出码 1，可接 CI；`report.md` 可直接贴群里当交付证据。
+
+### 登录态轻量迁移（借鉴 sid 会话思路，但我们只搬浏览器会话）
+
+```bash
+node scripts/xiumi-session.mjs export          # 从已登录的调试浏览器导出 → ~/.dsh/xiumi/session.json
+node scripts/xiumi-session.mjs apply --open <草稿URL>  # 任何带调试口的浏览器都能注入
+node scripts/xiumi-session.mjs status
+```
+
+比复制整个 profile 更轻：`sid` 有效期约 3 天，过期重新 export 即可；不碰账号密码。
+
+### 装到别的 AI 助手
+
+```bash
+node scripts/install-harnesses.mjs --list   # 探测本机装了哪些 harness
+node scripts/install-harnesses.mjs          # 装到所有探测到的用户级技能目录
+node scripts/install-harnesses.mjs --dir <目录>
+```
 
 ## 安全规则
 

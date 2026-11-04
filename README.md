@@ -19,6 +19,9 @@
 - **批量换图**：按图片 URL 里的 `-sz_<字节数>` 指纹精确匹配图库缩略图
 - **画布快照 / 校验**：组件数、每个滑动组件的页数与图片指纹，用来判断操作是否真的生效
 - **保存 + 审核**：保存草稿；引导点「申请审核」并用分享页核对是否已更新
+- **排版质检**（v0.2.0）：打开渲染后的分享页/编辑页读 computedStyle，检查正文字号行距、小标题、**图注字号与颜色一致性**、图片比例，输出 Markdown + JSON 报告（借鉴 xiumi-editor-checker 的规则，但不解析私有 JSON）
+- **登录态轻量迁移**（v0.2.0）：导出 cookie + localStorage 成 `session.json`，注入任意调试浏览器，免复制整个 profile（`sid` 约 3 天有效）
+- **多 harness 安装**（v0.2.0）：一键装进 Claude Code / Cursor / Codex / Gemini 等本机已装的 AI 助手
 
 ## 安装
 
@@ -34,7 +37,13 @@ dsh plugin add /path/to/dsh-xiumi
 
 ### 方式 B：当普通 skill 用
 
-把 `skill/` 目录复制到 `~/.dsh/skills/xiumi-editor-automation/`（或项目内 `.dsh/skills/`）。
+把 `skill/` 目录复制到 `~/.dsh/skills/xiumi-editor-automation/`（或项目内 `.dsh/skills/`）；
+也可以直接跑多 harness 安装器，装进 Claude Code / Cursor / Codex / Gemini 等：
+
+```bash
+node skill/scripts/install-harnesses.mjs --list   # 探测本机有哪些
+node skill/scripts/install-harnesses.mjs          # 装到全部探测到的目录
+```
 
 ### 依赖
 
@@ -70,6 +79,13 @@ node xiumi-gallery.mjs save
 
 # 7) 核对分享页
 node xiumi-gallery.mjs verify --share https://v.xiumius.cn/board/v5/<x>/<id>
+
+# 8) 排版质检（字号/行距/图注一致性/图片比例 → Markdown 报告）
+node xiumi-audit.mjs --share https://v.xiumius.cn/board/v5/<x>/<id> --md report.md
+
+# 9) 登录态轻量迁移（免复制整个 profile）
+node xiumi-session.mjs export
+node xiumi-session.mjs apply --open "https://xiumi.us/studio/v5#/paper/for/<草稿id>/cube/0"
 ```
 
 `convert` 的 `--art` 是画布上竖排照片的 `-sz_` 指纹（从上到下），`--gal` 是图库里对应照片的 `-sz_` 指纹（= 本地文件字节数，顺序一致），两者数量必须相等 = 页数。
@@ -87,6 +103,9 @@ dsh-xiumi/
 │       ├── launch-browser.mjs   # 跨平台启动调试口浏览器 + 复制登录态
 │       ├── xiumi-lib.mjs        # 可复用函数库
 │       ├── xiumi-gallery.mjs    # CLI：status/upload/convert/save/verify
+│       ├── xiumi-audit.mjs      # 排版质检（字号/行距/图注/图片比例）
+│       ├── xiumi-session.mjs    # 登录态 export/apply/status（cookie + localStorage）
+│       ├── install-harnesses.mjs# 装到 Claude Code / Cursor / Codex 等
 │       └── cdp.mjs              # 零依赖裸 CDP 小工具
 └── test/smoke.mjs          # 冒烟测试（文件完整性 + 语法 + frontmatter）
 ```

@@ -33,9 +33,16 @@ export async function loadPlaywright() {
   for (const c of candidates) {
     const p = c.endsWith('playwright-core') ? c : path.join(c, 'playwright-core');
     if (!fs.existsSync(p)) { tried.push(p + ' (missing)'); continue; }
-    const entry = path.join(p, 'index.js');
-    const url = 'file:///' + entry.replace(/\\/g, '/');
-    try { return await import(url); } catch (e) { tried.push(p + ': ' + e.message.slice(0, 100)); }
+    // 优先 ESM 入口；否则走 CJS 入口（动态 import CJS 时 chromium 可能挂在 default 上）
+    for (const file of ['index.mjs', 'index.js']) {
+      const entry = path.join(p, file);
+      if (!fs.existsSync(entry)) continue;
+      const url = 'file:///' + entry.replace(/\\/g, '/');
+      try {
+        const mod = await import(url);
+        return mod?.chromium ? mod : (mod?.default?.chromium ? mod.default : mod);
+      } catch (e) { tried.push(entry + ': ' + e.message.slice(0, 100)); }
+    }
   }
   throw new Error(
     '找不到 playwright-core。任选一种：\n' +
