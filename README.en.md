@@ -25,7 +25,7 @@ Drive a **logged-in** browser's [Xiumi](https://xiumi.us) article editor with **
 ### A. As a DSH plugin (recommended)
 
 ```bash
-dsh plugin add https://github.com/<owner>/dsh-xiumi
+dsh plugin add https://github.com/oobitoooo/dsh-xiumi
 # or a local checkout:
 dsh plugin add /path/to/dsh-xiumi
 ```

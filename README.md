@@ -25,7 +25,7 @@
 ### 方式 A：作为 DSH 插件（推荐）
 
 ```bash
-dsh plugin add https://github.com/<owner>/dsh-xiumi
+dsh plugin add https://github.com/oobitoooo/dsh-xiumi
 # 本地目录也可以：
 dsh plugin add /path/to/dsh-xiumi
 ```
