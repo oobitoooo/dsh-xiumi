@@ -1,0 +1,40 @@
+{
+  "name": "dsh-xiumi",
+  "version": "0.1.0",
+  "description": "DeepSeek Harness 插件：把「秀米（XIUMI）图文排版自动化」skill 装进 DSH，用 Playwright/CDP 操作已登录浏览器完成批量排版、滑动图集、换图、保存与审核核对",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "xiumi",
+    "秀米",
+    "wechat",
+    "playwright",
+    "skill"
+  ],
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "files": [
+    "lib",
+    "skill",
+    "cordis.patch.yml",
+    "README.md",
+    "README.en.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node test/smoke.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
